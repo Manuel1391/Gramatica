@@ -198,7 +198,7 @@ if (row.ipa) {
     ipa.textContent = 'IPA: ' + row.ipa;
     feedback.appendChild(ipa);
 }
-
+}
   // wire buttons
   typeBtn.addEventListener('click', ()=>{ textarea.style.display = textarea.style.display==='none'?'block':'none'; textarea.focus(); });
   showBtn.addEventListener('click', ()=>{ if(optionsDiv.style.display==='none'){ buildOptions(); optionsDiv.style.display='flex'; } else { optionsDiv.style.display='none'; }});
