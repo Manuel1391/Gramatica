@@ -30,7 +30,12 @@
     .ipa{font-family:monospace;margin-top:6px}
     footer{margin-top:18px;color:#64748b;font-size:13px}
     .small{font-size:13px;color:#475569}
-  </style>
+
+    /* NUEVO: para respetar saltos de línea y espacios en explicación */
+    .explanation-cell {
+        white-space: pre-wrap;
+    }
+</style>
 </head>
 <body>
   <header>
@@ -182,11 +187,17 @@ function makeCard(row, index){
       if(btn.dataset.val === row.correctanswer) btn.classList.add('correct');
       if(btn.dataset.val === chosen && !isCorrect) btn.classList.add('wrong');
     });
-    const expl = document.createElement('div'); expl.className='explain';
-    expl.innerHTML = '<strong>Explanation</strong><div>' + (row.explanation||'') + '</div>';
-    feedback.appendChild(expl);
-    if(row.ipa){ const ipa = document.createElement('div'); ipa.className='ipa'; ipa.textContent = 'IPA: ' + row.ipa; feedback.appendChild(ipa); }
-  }
+    const expl = document.createElement('div');
+expl.className = 'explanation-cell'; // clase para respetar saltos y espacios
+expl.innerHTML = (row.explanation || '');
+feedback.appendChild(expl);
+
+if (row.ipa) {
+    const ipa = document.createElement('div');
+    ipa.className = 'ipa';
+    ipa.textContent = 'IPA: ' + row.ipa;
+    feedback.appendChild(ipa);
+}
 
   // wire buttons
   typeBtn.addEventListener('click', ()=>{ textarea.style.display = textarea.style.display==='none'?'block':'none'; textarea.focus(); });
