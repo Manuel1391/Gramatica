@@ -32,7 +32,7 @@
     .small{font-size:13px;color:#475569}
 
     /* NUEVO: para respetar saltos de línea y espacios en explicación */
-    .explanation-cell {
+    .explanation {
         white-space: pre-wrap;
     }
 </style>
@@ -188,7 +188,7 @@ function makeCard(row, index){
       if(btn.dataset.val === chosen && !isCorrect) btn.classList.add('wrong');
     });
     const expl = document.createElement('div');
-expl.className = 'explanation-cell'; // clase para respetar saltos y espacios
+expl.className = 'explanation'; // clase para respetar saltos y espacios
 expl.innerHTML = (row.explanation || '');
 feedback.appendChild(expl);
 
