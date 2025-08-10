@@ -138,15 +138,8 @@ function makeCard(row, index){
   const situ = document.createElement('div'); situ.className='situation'; situ.textContent = row.situation || '(no situation)';
   card.appendChild(situ);
 
-  const controlsRow = document.createElement('div'); controlsRow.className='controls-row';
-
-    const showBtn = document.createElement('button'); showBtn.className='btn'; showBtn.textContent='Show options';
-  controlsRow.appendChild(showBtn);
-
-  card.appendChild(controlsRow);
-
-  const textarea = document.createElement('textarea'); textarea.className='answer'; textarea.placeholder='Write the complete sentence here (optional)'; textarea.style.display='none';
-  card.appendChild(textarea);
+ const controlsRow = document.createElement('div');
+controlsRow.className = 'controls-row';
 
   const optionsDiv = document.createElement('div'); optionsDiv.className='options'; optionsDiv.style.display='none';
   card.appendChild(optionsDiv);
