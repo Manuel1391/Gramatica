@@ -138,8 +138,13 @@ function makeCard(row, index){
   const situ = document.createElement('div'); situ.className='situation'; situ.textContent = row.situation || '(no situation)';
   card.appendChild(situ);
 
- const controlsRow = document.createElement('div');
-controlsRow.className = 'controls-row';
+  const controlsRow = document.createElement('div'); controlsRow.className='controls-row';
+  card.appendChild(controlsRow);
+
+  const showBtn = document.createElement('button'); 
+  showBtn.className='btn primary'; 
+  showBtn.textContent='Show options';
+  controlsRow.appendChild(showBtn);
 
   const optionsDiv = document.createElement('div'); optionsDiv.className='options'; optionsDiv.style.display='none';
   card.appendChild(optionsDiv);
@@ -157,9 +162,8 @@ controlsRow.className = 'controls-row';
       b.addEventListener('click', ()=>{
         // lock buttons
         Array.from(optionsDiv.querySelectorAll('button')).forEach(btn=>btn.disabled=true);
-        textarea.disabled = true;
         const isCorrect = opt === row.correctanswer;
-        progress[row._uid] = { chosen: opt, correct: isCorrect, typed: textarea.value || '' };
+        progress[row._uid] = { chosen: opt, correct: isCorrect };
         saveProgress(progress);
         showFeedback(isCorrect, opt, b);
         updateStats();
@@ -178,28 +182,34 @@ controlsRow.className = 'controls-row';
       if(btn.dataset.val === chosen && !isCorrect) btn.classList.add('wrong');
     });
     const expl = document.createElement('div');
-expl.className = 'explanation'; // clase para respetar saltos y espacios
-expl.innerHTML = (row.explanation || '');
-feedback.appendChild(expl);
+    expl.className = 'explanation';
+    expl.innerHTML = (row.explanation || '');
+    feedback.appendChild(expl);
 
-if (row.ipa) {
-    const ipa = document.createElement('div');
-    ipa.className = 'ipa';
-    ipa.textContent = 'IPA: ' + row.ipa;
-    feedback.appendChild(ipa);
-}
-}
-  // wire buttons
-  typeBtn.addEventListener('click', ()=>{ textarea.style.display = textarea.style.display==='none'?'block':'none'; textarea.focus(); });
-  showBtn.addEventListener('click', ()=>{ if(optionsDiv.style.display==='none'){ buildOptions(); optionsDiv.style.display='flex'; } else { optionsDiv.style.display='none'; }});
+    if (row.ipa) {
+      const ipa = document.createElement('div');
+      ipa.className = 'ipa';
+      ipa.textContent = 'IPA: ' + row.ipa;
+      feedback.appendChild(ipa);
+    }
+  }
+
+  // wire button
+  showBtn.addEventListener('click', ()=>{ 
+    if(optionsDiv.style.display==='none'){
+      buildOptions(); 
+      optionsDiv.style.display='flex'; 
+    } else { 
+      optionsDiv.style.display='none'; 
+    }
+  });
 
   // restore progress if any
   if(progress[row._uid]){
-    textarea.value = progress[row._uid].typed || '';
     // auto-build and disable
-    buildOptions(); optionsDiv.style.display='flex';
+    buildOptions(); 
+    optionsDiv.style.display='flex';
     Array.from(optionsDiv.querySelectorAll('button')).forEach(b=>b.disabled=true);
-    textarea.disabled = true;
     showFeedback(progress[row._uid].correct, progress[row._uid].chosen);
   }
 
