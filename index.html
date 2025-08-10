@@ -246,20 +246,27 @@ function shuffleArray(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.r
 
 // Load CSV
 async function loadData(){
-  try{
-    const res = await fetch(CSV_URL);
-    if(!res.ok) throw new Error('CSV fetch failed: ' + res.status);
-    const text = await res.text();
-    const rows = parseCSV(text);
-    // Assume header row exists; map columns by header name (case-insensitive)
-    const header = rows[0].map(h=>h.trim().toLowerCase());
-    const data = rows.slice(1).map(r=>{
-      const obj = {};
-      for(let i=0;i<header.length;i++) obj[header[i]] = (r[i]||'').trim();
-      return obj;
-    }).filter(o => o.situation && o.correctanswer);
-    return data;
-  }catch(err){ console.error(err); alert('Error loading CSV: '+err.message); return []; }
+    try {
+        const res = await fetch(CSV_URL);
+        if(!res.ok) throw new Error('CSV fetch failed: ' + res.status);
+        const text = await res.text();
+        const rows = parseCSV(text);
+        // Assume header row exists; map columns by header name (case-insensitive)
+        const header = rows[0].map(h=>h.trim().toLowerCase());
+        const data = rows.slice(1).map(r=>{
+            const obj = {};
+            for(let i=0;i<header.length;i++) {
+                // Aseguramos que todos los distractores (1-6) se carguen
+                obj[header[i]] = (r[i]||'').trim();
+            }
+            return obj;
+        }).filter(o => o.situation && o.correctanswer);
+        return data;
+    } catch(err) { 
+        console.error(err); 
+        alert('Error loading CSV: '+err.message); 
+        return []; 
+    }
 }
 
 // Local storage helpers
@@ -318,24 +325,34 @@ function makeCard(row, index) {
 
   function buildOptions() {
     optionsDiv.innerHTML = '';
-    const candidates = [row.correctanswer, row.distractor1||'', row.distractor2||'', row.distractor3||''].filter(Boolean);
+    // Agregamos todos los distractores posibles (1-6)
+    const candidates = [
+        row.correctanswer, 
+        row.distractor1 || '', 
+        row.distractor2 || '', 
+        row.distractor3 || '',
+        row.distractor4 || '',
+        row.distractor5 || '',
+        row.distractor6 || ''
+    ].filter(Boolean); // Filtramos para eliminar valores vacíos
+    
     const opts = shuffleArray(candidates.slice());
     opts.forEach(opt => {
-      const b = document.createElement('button'); 
-      b.className = 'option-btn'; 
-      b.textContent = opt; 
-      b.dataset.val = opt;
-      b.addEventListener('click', () => {
-        Array.from(optionsDiv.querySelectorAll('button')).forEach(btn => btn.disabled = true);
-        const isCorrect = opt === row.correctanswer;
-        progress[row._uid] = { chosen: opt, correct: isCorrect };
-        saveProgress(progress);
-        showFeedback(isCorrect, opt, b);
-        updateStats();
-      });
-      optionsDiv.appendChild(b);
+        const b = document.createElement('button'); 
+        b.className = 'option-btn'; 
+        b.textContent = opt; 
+        b.dataset.val = opt;
+        b.addEventListener('click', () => {
+            Array.from(optionsDiv.querySelectorAll('button')).forEach(btn => btn.disabled = true);
+            const isCorrect = opt === row.correctanswer;
+            progress[row._uid] = { chosen: opt, correct: isCorrect };
+            saveProgress(progress);
+            showFeedback(isCorrect, opt, b);
+            updateStats();
+        });
+        optionsDiv.appendChild(b);
     });
-  }
+}
 
   function showFeedback(isCorrect, chosen, clickedBtn) {
     feedback.innerHTML = '';
