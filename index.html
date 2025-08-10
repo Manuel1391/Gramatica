@@ -17,9 +17,10 @@
     .stats{font-size:14px;color:#475569}
 
     .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px}
-    .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px;box-shadow:0 1px 2px rgba(2,6,23,0.03)}
+    .card{background:var(--card-bg);border:1px solid var(--card-border);border-radius:12px;padding:12px;box-shadow:0 1px 2px rgba(2,6,23,0.03);transition:all 0.3s ease}
+    .card.answered{background-color:#f0f9ff;border-color:#bae6fd}
     .situation{font-weight:600;margin-bottom:10px}
-    .controls-row{display:flex;gap:8px;flex-wrap:wrap}
+    .controls-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
     textarea.answer{width:100%;min-height:56px;border:1px solid #e6eef8;padding:8px;border-radius:8px;margin-top:8px;resize:vertical}
     .options{display:flex;flex-direction:column;gap:6px;margin-top:8px}
     .option-btn{padding:8px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;text-align:left;cursor:pointer}
@@ -132,37 +133,56 @@ function updateStats(){
 }
 
 
-function makeCard(row, index){
-  const card = document.createElement('div'); card.className='card';
+function makeCard(row, index) {
+  const card = document.createElement('div'); 
+  card.className = 'card';
   card.dataset.index = index;
 
-  const situ = document.createElement('div'); situ.className='situation'; situ.textContent = row.situation || '(no situation)';
+  // Marcar como respondida si ya está en el progreso
+  if (progress[row._uid]) {
+    card.classList.add('answered');
+  }
+
+  const situ = document.createElement('div'); 
+  situ.className = 'situation'; 
+  situ.textContent = row.situation || '(no situation)';
   card.appendChild(situ);
 
-  const controlsRow = document.createElement('div'); controlsRow.className='controls-row';
+  const controlsRow = document.createElement('div'); 
+  controlsRow.className = 'controls-row';
   card.appendChild(controlsRow);
 
   const showBtn = document.createElement('button'); 
-  showBtn.className='btn primary'; 
-  showBtn.textContent='Show options';
+  showBtn.className = 'btn primary'; 
+  showBtn.textContent = 'Show options';
   controlsRow.appendChild(showBtn);
 
-  const optionsDiv = document.createElement('div'); optionsDiv.className='options'; optionsDiv.style.display='none';
+  const hideBtn = document.createElement('button');
+  hideBtn.className = 'btn';
+  hideBtn.textContent = 'Hide options';
+  hideBtn.style.display = 'none';
+  controlsRow.appendChild(hideBtn);
+
+  const optionsDiv = document.createElement('div'); 
+  optionsDiv.className = 'options'; 
+  optionsDiv.style.display = 'none';
   card.appendChild(optionsDiv);
 
-  const feedback = document.createElement('div'); feedback.className='feedback';
+  const feedback = document.createElement('div'); 
+  feedback.className = 'feedback';
   card.appendChild(feedback);
 
-  // pre-populate options
-  function buildOptions(){
-    optionsDiv.innerHTML='';
+  function buildOptions() {
+    optionsDiv.innerHTML = '';
     const candidates = [row.correctanswer, row.distractor1||'', row.distractor2||'', row.distractor3||''].filter(Boolean);
     const opts = shuffleArray(candidates.slice());
-    opts.forEach(opt=>{
-      const b = document.createElement('button'); b.className='option-btn'; b.textContent = opt; b.dataset.val = opt;
-      b.addEventListener('click', ()=>{
-        // lock buttons
-        Array.from(optionsDiv.querySelectorAll('button')).forEach(btn=>btn.disabled=true);
+    opts.forEach(opt => {
+      const b = document.createElement('button'); 
+      b.className = 'option-btn'; 
+      b.textContent = opt; 
+      b.dataset.val = opt;
+      b.addEventListener('click', () => {
+        Array.from(optionsDiv.querySelectorAll('button')).forEach(btn => btn.disabled = true);
         const isCorrect = opt === row.correctanswer;
         progress[row._uid] = { chosen: opt, correct: isCorrect };
         saveProgress(progress);
@@ -173,13 +193,13 @@ function makeCard(row, index){
     });
   }
 
-  function showFeedback(isCorrect, chosen, clickedBtn){
+  function showFeedback(isCorrect, chosen, clickedBtn) {
     feedback.innerHTML = '';
-    const mark = document.createElement('div'); mark.textContent = isCorrect ? '✅ Correct' : '❌ Incorrect';
+    const mark = document.createElement('div'); 
+    mark.textContent = isCorrect ? '✅ Correct' : '❌ Incorrect';
     feedback.appendChild(mark);
     
-    // highlight buttons
-    Array.from(optionsDiv.querySelectorAll('button')).forEach(btn=>{
+    Array.from(optionsDiv.querySelectorAll('button')).forEach(btn => {
       if(btn.dataset.val === row.correctanswer) btn.classList.add('correct');
       if(btn.dataset.val === chosen && !isCorrect) btn.classList.add('wrong');
     });
@@ -196,46 +216,47 @@ function makeCard(row, index){
       feedback.appendChild(ipa);
     }
     
-    // Add hide button only if answer was correct
+    // Mostrar el botón Hide options solo si la respuesta es correcta
     if(isCorrect) {
-      const hideBtn = document.createElement('button');
-      hideBtn.className = 'btn';
-      hideBtn.textContent = 'Hide options';
-      hideBtn.style.marginTop = '8px';
-      hideBtn.addEventListener('click', () => {
-        optionsDiv.style.display = 'none';
-        feedback.style.display = 'none';
-        // Show feedback again when options are shown
-        showBtn.addEventListener('click', () => {
-          feedback.style.display = 'block';
-        }, {once: true});
-      });
-      feedback.appendChild(hideBtn);
+      hideBtn.style.display = 'block';
+      showBtn.style.display = 'none';
     }
   }
 
-  // wire button
-  showBtn.addEventListener('click', ()=>{ 
-    if(optionsDiv.style.display==='none'){
+  // Evento para el botón Hide options
+  hideBtn.addEventListener('click', () => {
+    optionsDiv.style.display = 'none';
+    feedback.style.display = 'none';
+    hideBtn.style.display = 'none';
+    showBtn.style.display = 'block';
+    
+    // Marcar la tarjeta como respondida y moverla al final
+    card.classList.add('answered');
+    gridEl.appendChild(card);
+  });
+
+  // Evento para el botón Show options
+  showBtn.addEventListener('click', () => { 
+    if(optionsDiv.style.display === 'none') {
       buildOptions(); 
-      optionsDiv.style.display='flex';
-      feedback.style.display = 'block'; // Make sure feedback is visible
+      optionsDiv.style.display = 'flex';
+      feedback.style.display = 'block';
     } else { 
-      optionsDiv.style.display='none'; 
+      optionsDiv.style.display = 'none'; 
     }
   });
 
-  // restore progress if any
-  if(progress[row._uid]){
-    // auto-build and disable
+  // Restaurar progreso si existe
+  if(progress[row._uid]) {
     buildOptions(); 
-    optionsDiv.style.display='flex';
-    Array.from(optionsDiv.querySelectorAll('button')).forEach(b=>b.disabled=true);
+    optionsDiv.style.display = 'flex';
+    Array.from(optionsDiv.querySelectorAll('button')).forEach(b => b.disabled = true);
     showFeedback(progress[row._uid].correct, progress[row._uid].chosen);
-    // If it was correct and user wants to hide, respect that
+    
+    // Si ya estaba respondida correctamente, ocultar el botón Show options
     if(progress[row._uid].correct) {
-      // Initially show everything for restored cards
-      feedback.style.display = 'block';
+      showBtn.style.display = 'none';
+      hideBtn.style.display = 'block';
     }
   }
 
