@@ -1,4 +1,4 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -131,6 +131,9 @@ function updateStats(){
   statsEl.textContent = `Loaded: ${allData.length} • Selected: ${selectedRows.length} • Correct: ${correct}`;
 }
 
+<script>
+// ... (código anterior permanece igual)
+
 function makeCard(row, index){
   const card = document.createElement('div'); card.className='card';
   card.dataset.index = index;
@@ -176,11 +179,13 @@ function makeCard(row, index){
     feedback.innerHTML = '';
     const mark = document.createElement('div'); mark.textContent = isCorrect ? '✅ Correct' : '❌ Incorrect';
     feedback.appendChild(mark);
+    
     // highlight buttons
     Array.from(optionsDiv.querySelectorAll('button')).forEach(btn=>{
       if(btn.dataset.val === row.correctanswer) btn.classList.add('correct');
       if(btn.dataset.val === chosen && !isCorrect) btn.classList.add('wrong');
     });
+    
     const expl = document.createElement('div');
     expl.className = 'explanation';
     expl.innerHTML = (row.explanation || '');
@@ -192,13 +197,31 @@ function makeCard(row, index){
       ipa.textContent = 'IPA: ' + row.ipa;
       feedback.appendChild(ipa);
     }
+    
+    // Add hide button only if answer was correct
+    if(isCorrect) {
+      const hideBtn = document.createElement('button');
+      hideBtn.className = 'btn';
+      hideBtn.textContent = 'Hide options';
+      hideBtn.style.marginTop = '8px';
+      hideBtn.addEventListener('click', () => {
+        optionsDiv.style.display = 'none';
+        feedback.style.display = 'none';
+        // Show feedback again when options are shown
+        showBtn.addEventListener('click', () => {
+          feedback.style.display = 'block';
+        }, {once: true});
+      });
+      feedback.appendChild(hideBtn);
+    }
   }
 
   // wire button
   showBtn.addEventListener('click', ()=>{ 
     if(optionsDiv.style.display==='none'){
       buildOptions(); 
-      optionsDiv.style.display='flex'; 
+      optionsDiv.style.display='flex';
+      feedback.style.display = 'block'; // Make sure feedback is visible
     } else { 
       optionsDiv.style.display='none'; 
     }
@@ -211,6 +234,11 @@ function makeCard(row, index){
     optionsDiv.style.display='flex';
     Array.from(optionsDiv.querySelectorAll('button')).forEach(b=>b.disabled=true);
     showFeedback(progress[row._uid].correct, progress[row._uid].chosen);
+    // If it was correct and user wants to hide, respect that
+    if(progress[row._uid].correct) {
+      // Initially show everything for restored cards
+      feedback.style.display = 'block';
+    }
   }
 
   return card;
