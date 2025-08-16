@@ -1,4 +1,4 @@
- <!doctype html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
@@ -256,7 +256,7 @@ async function loadData(){
         const data = rows.slice(1).map(r=>{
             const obj = {};
             for(let i=0;i<header.length;i++) {
-                // Aseguramos que todos los distractores (1-6) se carguen
+                // Aseguramos que todos los distractores (1-6) y sus explicaciones se carguen
                 obj[header[i]] = (r[i]||'').trim();
             }
             return obj;
@@ -282,7 +282,6 @@ function updateStats(){
   const correct = Object.values(progress).filter(v=>v.correct).length;
   statsEl.textContent = `Loaded: ${allData.length} • Selected: ${selectedRows.length} • Correct: ${correct}`;
 }
-
 
 function makeCard(row, index) {
   const card = document.createElement('div'); 
@@ -325,36 +324,48 @@ function makeCard(row, index) {
 
   function buildOptions() {
     optionsDiv.innerHTML = '';
-    // Agregamos todos los distractores posibles (1-6)
+    // Creamos un array con todas las opciones posibles (correcta + distractores)
     const candidates = [
-        row.correctanswer, 
-        row.distractor1 || '', 
-        row.distractor2 || '', 
-        row.distractor3 || '',
-        row.distractor4 || '',
-        row.distractor5 || '',
-        row.distractor6 || ''
-    ].filter(Boolean); // Filtramos para eliminar valores vacíos
+        {text: row.correctanswer, type: 'correct'},
+        {text: row.distractor1 || '', type: 'd1'},
+        {text: row.distractor2 || '', type: 'd2'},
+        {text: row.distractor3 || '', type: 'd3'},
+        {text: row.distractor4 || '', type: 'd4'},
+        {text: row.distractor5 || '', type: 'd5'},
+        {text: row.distractor6 || '', type: 'd6'}
+    ].filter(opt => opt.text); // Filtramos opciones vacías
     
     const opts = shuffleArray(candidates.slice());
     opts.forEach(opt => {
         const b = document.createElement('button'); 
         b.className = 'option-btn'; 
-        b.textContent = opt; 
-        b.dataset.val = opt;
+        b.textContent = opt.text; 
+        b.dataset.val = opt.text;
+        b.dataset.type = opt.type;
         b.addEventListener('click', () => {
             Array.from(optionsDiv.querySelectorAll('button')).forEach(btn => btn.disabled = true);
-            const isCorrect = opt === row.correctanswer;
-            progress[row._uid] = { chosen: opt, correct: isCorrect };
+            const isCorrect = opt.type === 'correct';
+            progress[row._uid] = { chosen: opt.text, correct: isCorrect };
             saveProgress(progress);
-            showFeedback(isCorrect, opt, b);
+            
+            let contentToShow = '';
+            if(isCorrect) {
+                // Mostrar IPA para respuesta correcta
+                contentToShow = row.ipa || 'No IPA available';
+            } else {
+                // Mostrar explanation del distractor seleccionado
+                const distractorNum = opt.type.substring(1); // extraer el número (1-6)
+                contentToShow = row[`explanation d${distractorNum}`] || row.explanation || 'No explanation available';
+            }
+            
+            showFeedback(isCorrect, opt.text, b, contentToShow);
             updateStats();
         });
         optionsDiv.appendChild(b);
     });
-}
+  }
 
-  function showFeedback(isCorrect, chosen, clickedBtn) {
+  function showFeedback(isCorrect, chosen, clickedBtn, content) {
     feedback.innerHTML = '';
     const mark = document.createElement('div'); 
     mark.textContent = isCorrect ? '✅ Correct' : '❌ Incorrect';
@@ -367,16 +378,30 @@ function makeCard(row, index) {
     
     const expl = document.createElement('div');
     expl.className = 'explanation';
-    expl.innerHTML = (row.explanation || '');
-    feedback.appendChild(expl);
-
-    if (row.ipa) {
-      const ipa = document.createElement('div');
-      ipa.className = 'ipa';
-      ipa.textContent = 'IPA: ' + row.ipa;
-      feedback.appendChild(ipa);
+    
+    if(isCorrect) {
+        const ipaLabel = document.createElement('div');
+        ipaLabel.textContent = 'IPA Pronunciation:';
+        ipaLabel.style.fontWeight = 'bold';
+        expl.appendChild(ipaLabel);
+        
+        const ipaContent = document.createElement('div');
+        ipaContent.className = 'ipa';
+        ipaContent.textContent = content;
+        expl.appendChild(ipaContent);
+    } else {
+        const explLabel = document.createElement('div');
+        explLabel.textContent = 'Explanation:';
+        explLabel.style.fontWeight = 'bold';
+        expl.appendChild(explLabel);
+        
+        const explContent = document.createElement('div');
+        explContent.textContent = content;
+        expl.appendChild(explContent);
     }
     
+    feedback.appendChild(expl);
+
     // Mostrar el botón Hide options solo si la respuesta es correcta
     if(isCorrect) {
       hideBtn.style.display = 'block';
@@ -412,7 +437,16 @@ function makeCard(row, index) {
     buildOptions(); 
     optionsDiv.style.display = 'flex';
     Array.from(optionsDiv.querySelectorAll('button')).forEach(b => b.disabled = true);
-    showFeedback(progress[row._uid].correct, progress[row._uid].chosen);
+    
+    let contentToShow = '';
+    if(progress[row._uid].correct) {
+        contentToShow = row.ipa || 'No IPA available';
+    } else {
+        // Para respuestas incorrectas guardadas, mostramos la explicación general
+        contentToShow = row.explanation || 'No explanation available';
+    }
+    
+    showFeedback(progress[row._uid].correct, progress[row._uid].chosen, null, contentToShow);
     
     // Si ya estaba respondida correctamente, ocultar el botón Show options
     if(progress[row._uid].correct) {
